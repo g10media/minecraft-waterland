@@ -1,6 +1,6 @@
 version ?= 0.11.1-pre.0
 
-ci: deps style lint gen-villages-maps resource-packs-package
+ci: clean deps style lint gen-villages-maps resource-packs-package
 
 clean:
 	rm -rf stage
@@ -12,9 +12,24 @@ define python_venv
 	. .venv/bin/activate && $(1)
 endef
 
+define deps_extra
+	@if command -v apt-get > /dev/null 2>&1; then \
+		if [ "$$(id -u)" = "0" ]; then \
+			$(MAKE) deps-extra-apt; \
+		else \
+			sudo $(MAKE) deps-extra-apt; \
+		fi; \
+	fi
+endef
+
 deps:
 	python3 -m venv .venv
 	$(call python_venv,python3 -m pip install -r requirements.txt)
+	$(call deps_extra)
+
+deps-extra-apt:
+	apt-get update
+	apt-get install -y markdownlint
 
 deps-upgrade:
 	python3 -m venv .venv
